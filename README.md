@@ -36,8 +36,14 @@ Bu repo, **tek bir tüketici NVMe'si olan sıradan bir masaüstünde** aynı mod
 | 4 | NVMe "aygıtı kapatmaya izin verme" kapatma | Bu sürücüde Aygıt Yöneticisi'nde bu sekme yok/bulunamadı | ⏳ Beklemede |
 | 5 | PCI Express Link State Power Management → Kapalı | Uygulanma durumu teyit edilmedi | ⏳ Beklemede |
 | 6 | Disk sıcaklığı kontrolü | Yük altında sabit 44°C | ❌ Isınma/throttling elendi |
-| 7 | OMP_NUM_THREADS ayarı | Henüz test edilmedi | ⏳ Sırada — CPU üretim sırasında sadece %11 kullanılıyor, tek çekirdek şüphesi var |
-| 8 | GPU/CUDA hızlandırma | Araştırıldı | ❌ Mevcut değil — bkz. GPU notu |
+| 7 | OMP_NUM_THREADS=8 (i7-12700F'nin 8 P-çekirdeği) | disk 0.86 GB/s → 15 tok · 113s · 0.13 tok/s | ❌ Ayarsız halden kötü |
+| 8 | OMP_NUM_THREADS=20 (tüm P+E thread) | disk 0.69 GB/s → 15 tok · 153s · 0.10 tok/s | ❌ 8'den de kötü |
+| 9 | GPU/CUDA hızlandırma | Araştırıldı | ❌ Mevcut değil — bkz. GPU notu |
+
+**Not (#7-8):** Üç ölçüm art arda, monoton şekilde kötüleşti (0.95 → 0.86 → 0.69 GB/s).
+Bu thread sayısından çok, arka arkaya üç ağır yükleme/üretimden kaynaklanan bir
+ısınma birikimi olabilir — sıcaklık daha önce sadece tek seferlik ölçülmüştü.
+Soğutma sonrası temiz tekrar testi gerekiyor (bkz. Sıradaki adımlar).
 
 ## `V41_STATS=1` ile ölçülen gerçek motor verisi
 
@@ -71,8 +77,9 @@ bu model için devre dışı.
 
 ## Sıradaki adımlar
 
-- [ ] Tam i7 modelini ve çekirdek/thread sayısını doğrula
-- [ ] `OMP_NUM_THREADS` değerini açıkça ayarlayıp test et
+- [x] Tam i7 modelini ve çekirdek/thread sayısını doğrula — **i7-12700F: 8P+4E, 20 thread**
+- [x] `OMP_NUM_THREADS` değerini açıkça ayarlayıp test et — **8 ve 20, ikisi de ayarsız halden kötü**
+- [ ] **Soğutma sonrası temiz baseline:** 5 dk bekle → sıcaklık ölç → `OMP_NUM_THREADS`'i sıfırla (boş bırak) → tekrar ölç → hemen sonra sıcaklık tekrar ölç (ısınma birikimi hipotezini test etmek için)
 - [ ] Daha uzun bir yanıtla `V41_STATS=1` tekrar ölç (DSpark istatistiği için daha iyi örneklem)
 - [ ] PCI Express Link State Power Management ayarını teyit et
 - [ ] `/brio` modunu dene ve karşılaştır
